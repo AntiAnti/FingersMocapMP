@@ -1,0 +1,36 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.1",
+	"FriendlyName": "Mediapipe Fingers",
+	"Description": "Unreal Mediapipe Fingers Extension",
+	"Category": "Media",
+	"CreatedBy": "YuriNK",
+	"CreatedByURL": "https://vrmocapstudio.com",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"EngineVersion": "5.2.0",
+	"CanContainContent": true,
+	"Installed": true,
+	"Modules": [
+		{
+			"Name": "MediapipeFingers",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"PlatformAllowList": [
+				"Win64"
+			]
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "MediaPipe",
+			"Enabled": true
+		},
+		{
+			"Name": "VRHandsSolver",
+			"Enabled": true
+		}
+	]
+}
