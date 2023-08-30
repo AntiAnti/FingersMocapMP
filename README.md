@@ -12,7 +12,7 @@ The project uses:
 
 Download latest release with binaries. Override from source/content files to get latest version.
 
-[YouTube Playlist]([https://www.youtube.com/playlist?list=PLl4Fsvk8JAxJj8SONL5SUqrk1xPX8OMm7)
+[YouTube Playlist](https://www.youtube.com/playlist?list=PLl4Fsvk8JAxJj8SONL5SUqrk1xPX8OMm7)
 
 ## Contacts
 
