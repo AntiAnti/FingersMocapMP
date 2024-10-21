@@ -5,7 +5,8 @@
 #include "MediaPipeModule.h"
 #include "MediaPipeShared.h"
 #include "Misc/Paths.h"
-#include "Launch/Resources/Version.h"
+#include "Misc/EngineVersionComparison.h"
+#include "Runtime/Launch/Resources/Version.h"
 
 #if PLATFORM_WINDOWS
 #include "Windows/WindowsPlatformProcess.h"
@@ -24,7 +25,7 @@ class UmpLog : public IUmpLog
 public:
 	void Println(EUmpVerbosity verbosity, const char* msg) const override
 	{
-		#define LOG_IMPL(v, msg) PLUGIN_LOG(v, TEXT("%S"), msg)
+		#define LOG_IMPL(v, msg) UE_LOG(LogMediaPipe, v, TEXT("%S"), msg)
 		switch (verbosity)
 		{
 			case EUmpVerbosity::Error: LOG_IMPL(Error, msg); break;
@@ -41,9 +42,9 @@ static UmpLog UmpLogger;
 // SUPER LAME FIX for deadlock in FModuleTrace::OnDllLoaded (hello EPIC? plz don't use LdrRegisterDllNotification)
 void FixDeadlock()
 {
-	#if (ENGINE_MAJOR_VERSION == 5)
+#if (ENGINE_MAJOR_VERSION == 5)
 
-#if ENGINE_MINOR_VERSION != 2
+#if ENGINE_MINOR_VERSION == 1
 	const char* Variants[] = {
 		// 5.0.0
 		"48 89 5C 24 08 55 56 57 41 54 41 55 41 56 41 57 48 8D 6C 24 D9 48 81 EC B0 00 00 00 48 8B 05 B5 C6 B5 00", // dev editor (unrealeditor-core.dll)
@@ -60,6 +61,11 @@ void FixDeadlock()
 	#endif
 		"48 89 5C 24 08 55 56 57 41 54 41 55 41 56 41 57 48 8D 6C 24 D9 48 81 EC B0 00 00 00 4C 8B 05 CC CC CC CC 48 33 C4 48 89 45 17 4D 63 68 3C 33 C0", // dev game
 	};
+#elif ENGINE_MINOR_VERSION == 4
+	const char* Variants[] = {
+		"48 89 5C 24 20 55 56 57 41 54 41 55 41 56 41 57 48 8D 6C 24 D9 48 81 EC A0 00 00 00 48 8B 05 7D 12 C1 00 48 33 C4 48 89 45 1F 4D 8B E0 4C 8B EA",
+		"48 89 5C 24 08 55 56 57 41 54 41 55 41 56 41 57 48 8D 6C 24 D9 48 81 EC B0 00 00 00 4C 8B 05 CC CC CC CC 48 33 C4 48 89 45 17 4D 63 68 3C 33 C0", // dev game
+	};
 #endif
 	const int NumVariants = sizeof(Variants) / sizeof(Variants[0]);
 
@@ -70,7 +76,8 @@ void FixDeadlock()
 		auto Pattern = CkParseByteArray(Variants[i]);
 		std::vector<uint8_t*> Loc;
 		auto Status = CkFindPatternIntern<CkWildcardCC>(Process, Pattern, 2, Loc);
-		PLUGIN_LOG_INFO(TEXT("FindPattern Id=%d Status=%d Count=%d [%s]"), i, (int)Status, (int)Loc.size());
+		PLUGIN_LOG_INFO(TEXT("FindPattern Id=%d Status=%d Count=%d"), i, (int)Status, (int)Loc.size());
+		PLUGIN_LOG_INFO(TEXT("Pattern: %s"), ANSI_TO_TCHAR(Variants[i]));
 
 		if (Status == 0 && Loc.size() == 1)
 		{
@@ -82,9 +89,9 @@ void FixDeadlock()
 		}
 	}
 
-	PLUGIN_LOG(Warning, TEXT("FModuleTrace::OnDllLoaded NOT FOUND"));
+	UE_LOG(LogMediaPipe, Warning, TEXT("FModuleTrace::OnDllLoaded NOT FOUND"));
 
-	#endif
+#endif
 }
 
 void FMediaPipeModule::StartupModule()
@@ -126,21 +133,21 @@ void FMediaPipeModule::StartupModule()
 
 	if (!LibUmp)
 	{
-		PLUGIN_LOG(Error, TEXT("Unable to load: %s"), *LibPath);
+		UE_LOG(LogMediaPipe, Error, TEXT("Unable to load: %s"), *LibPath);
 	}
 	else
 	{
 		CreateContextPtr = FPlatformProcess::GetDllExport(LibUmp, TEXT("DYN_UmpCreateContext"));
 		if (!CreateContextPtr)
 		{
-			PLUGIN_LOG(Error, TEXT("Export not found: DYN_UmpCreateContext"));
+			UE_LOG(LogMediaPipe, Error, TEXT("Export not found: DYN_UmpCreateContext"));
 		}
 		else
 		{
 			Context = ((UmpCreateContext_Proto*)CreateContextPtr)();
 			if (!Context)
 			{
-				PLUGIN_LOG(Error, TEXT("Unable to create IUmpContext"));
+				UE_LOG(LogMediaPipe, Error, TEXT("Unable to create IUmpContext"));
 			}
 			else
 			{
@@ -175,14 +182,14 @@ IUmpPipeline* FMediaPipeModule::CreatePipeline()
 
 	if (!Context)
 	{
-		PLUGIN_LOG(Error, TEXT("Invalid state: IUmpContext"));
+		UE_LOG(LogMediaPipe, Error, TEXT("Invalid state: IUmpContext"));
 		return nullptr;
 	}
 
 	auto Pipeline = Context->CreatePipeline();
 	if (!Pipeline)
 	{
-		PLUGIN_LOG(Error, TEXT("Unable to create IUmpPipeline"));
+		UE_LOG(LogMediaPipe, Error, TEXT("Unable to create IUmpPipeline"));
 	}
 
 	return Pipeline;
